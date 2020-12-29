@@ -13,3 +13,4 @@ A GUI program making use of this library is provided under GUI. It is based on Q
 qmake Si5351GUI.pro
 make
 ```
+![alt text](GUI/Si5351GUI.png)
