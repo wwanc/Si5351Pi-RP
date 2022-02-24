@@ -17,6 +17,9 @@ public:
     ~MainWindow();
 
 private:
+    QLabel* m_labelCLK0Freq;
+    QLabel* m_labelCLK1Freq;
+    QLabel* m_labelCLK2Freq;
     QGroupBox* m_groupboxCLK0;
     QGroupBox* m_groupboxCLK1;
     QGroupBox* m_groupboxCLK2;

@@ -13,46 +13,46 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_timerCheckStatus, &QTimer::timeout, this, &MainWindow::updateSi5351Status);
 
     //CLK0
-    QLabel* labelCLK0Freq = new QLabel("kHz");
+    m_labelCLK0Freq = new QLabel("kHz");
     m_doublespinboxCLK0Freq = new QDoubleSpinBox;
-    m_doublespinboxCLK0Freq->setRange(4, 200000);
+    m_doublespinboxCLK0Freq->setRange(4, 225000);
     m_doublespinboxCLK0Freq->setSingleStep(10);
     m_doublespinboxCLK0Freq->setDecimals(3);
     m_doublespinboxCLK0Freq->setValue(10);
     m_doublespinboxCLK0Freq->setAlignment(Qt::AlignRight);
     QHBoxLayout* hboxLayout0 = new QHBoxLayout;
     hboxLayout0->addWidget(m_doublespinboxCLK0Freq, 100);
-    hboxLayout0->addWidget(labelCLK0Freq, 0);
+    hboxLayout0->addWidget(m_labelCLK0Freq, 0);
     m_groupboxCLK0 = new QGroupBox("CLK0");
     m_groupboxCLK0->setCheckable(true);
     m_groupboxCLK0->setChecked(false);
     m_groupboxCLK0->setLayout(hboxLayout0);
     //CLK1
-    QLabel* labelCLK1Freq = new QLabel("kHz");
+    m_labelCLK1Freq = new QLabel("kHz");
     m_doublespinboxCLK1Freq = new QDoubleSpinBox;
-    m_doublespinboxCLK1Freq->setRange(4, 200000);
+    m_doublespinboxCLK1Freq->setRange(4, 225000);
     m_doublespinboxCLK1Freq->setSingleStep(100);
     m_doublespinboxCLK1Freq->setDecimals(3);
     m_doublespinboxCLK1Freq->setValue(1000);
     m_doublespinboxCLK1Freq->setAlignment(Qt::AlignRight);
     QHBoxLayout* hboxLayout1 = new QHBoxLayout;
     hboxLayout1->addWidget(m_doublespinboxCLK1Freq, 100);
-    hboxLayout1->addWidget(labelCLK1Freq, 0);
+    hboxLayout1->addWidget(m_labelCLK1Freq, 0);
     m_groupboxCLK1 = new QGroupBox("CLK1");
     m_groupboxCLK1->setCheckable(true);
     m_groupboxCLK1->setChecked(false);
     m_groupboxCLK1->setLayout(hboxLayout1);
     //CLK2
-    QLabel* labelCLK2Freq = new QLabel("kHz");
+    m_labelCLK2Freq = new QLabel("kHz");
     m_doublespinboxCLK2Freq = new QDoubleSpinBox;
-    m_doublespinboxCLK2Freq->setRange(4, 200000);
+    m_doublespinboxCLK2Freq->setRange(4, 225000);
     m_doublespinboxCLK2Freq->setSingleStep(1000);
     m_doublespinboxCLK2Freq->setDecimals(3);
     m_doublespinboxCLK2Freq->setValue(100000);
     m_doublespinboxCLK2Freq->setAlignment(Qt::AlignRight);
     QHBoxLayout* hboxLayout2 = new QHBoxLayout;
     hboxLayout2->addWidget(m_doublespinboxCLK2Freq, 100);
-    hboxLayout2->addWidget(labelCLK2Freq, 0);
+    hboxLayout2->addWidget(m_labelCLK2Freq, 0);
     m_groupboxCLK2 = new QGroupBox("CLK2");
     m_groupboxCLK2->setCheckable(true);
     m_groupboxCLK2->setChecked(false);
@@ -95,62 +95,81 @@ MainWindow::~MainWindow()
 void MainWindow::enableCLK0(bool bEnable)
 {
     if(bEnable){
-        uint64_t freq = m_doublespinboxCLK0Freq->value()*100000;
-        m_si5351->set_freq(freq, SI5351_CLK0);
-        m_si5351->update_status();
-        m_timerCheckStatus->start();
+        updateFreqCLK0(m_doublespinboxCLK0Freq->value());
+        m_si5351->output_enable(SI5351_CLK0, true);
+    } else {
+        m_si5351->output_enable(SI5351_CLK0, false);
     }
-    m_si5351->output_enable(SI5351_CLK0, bEnable);
 }
 
 void MainWindow::enableCLK1(bool bEnable)
 {
     if(bEnable){
-        uint64_t freq = m_doublespinboxCLK1Freq->value()*100000;
-        m_si5351->set_freq(freq, SI5351_CLK1);
-        m_si5351->update_status();
-        m_timerCheckStatus->start();
+        updateFreqCLK1(m_doublespinboxCLK1Freq->value());
+        m_si5351->output_enable(SI5351_CLK1, true);
+    } else {
+        m_si5351->output_enable(SI5351_CLK1, false);
     }
-    m_si5351->output_enable(SI5351_CLK1, bEnable);
 }
 
 void MainWindow::enableCLK2(bool bEnable)
 {
     if(bEnable){
-        uint64_t freq = m_doublespinboxCLK2Freq->value()*100000;
-        m_si5351->set_freq(freq, SI5351_CLK2);
-        m_si5351->update_status();
-        m_timerCheckStatus->start();
+        updateFreqCLK2(m_doublespinboxCLK2Freq->value());
+        m_si5351->output_enable(SI5351_CLK2, true);
+    } else {
+        m_si5351->output_enable(SI5351_CLK2, false);
     }
-    m_si5351->output_enable(SI5351_CLK2, bEnable);
 }
 
 void MainWindow::updateFreqCLK0(double dfFreq)
 {
     uint64_t freq = dfFreq*100000;
-    m_si5351->set_freq(freq, SI5351_CLK0);
-    m_si5351->update_status();
-    m_timerCheckStatus->start();
+    uint8_t setOK = m_si5351->set_freq(freq, SI5351_CLK0);
+    if(setOK == 0){
+        //OK
+        m_timerCheckStatus->start();
+        m_labelCLK0Freq->setStyleSheet("QLabel { color: black; }");
+        m_labelSi5351Status->clear();
+    } else {
+        //Error set_freq
+        m_labelCLK0Freq->setStyleSheet("QLabel { color: red; }");
+    }
 }
 
 void MainWindow::updateFreqCLK1(double dfFreq)
 {
     uint64_t freq = dfFreq*100000;
-    m_si5351->set_freq(freq, SI5351_CLK1);
-    m_si5351->update_status();
-    m_timerCheckStatus->start();
+    uint8_t setOK = m_si5351->set_freq(freq, SI5351_CLK1);
+    if(setOK == 0){
+        //OK
+        m_timerCheckStatus->start();
+        m_labelCLK1Freq->setStyleSheet("QLabel { color: black; }");
+        m_labelSi5351Status->clear();
+    } else {
+        //Error set_freq
+        m_labelCLK1Freq->setStyleSheet("QLabel { color: red; }");
+    }
 }
 
 void MainWindow::updateFreqCLK2(double dfFreq)
 {
     uint64_t freq = dfFreq*100000;
-    m_si5351->set_freq(freq, SI5351_CLK2);
-    m_si5351->update_status();
-    m_timerCheckStatus->start();
+    uint8_t setOK = m_si5351->set_freq(freq, SI5351_CLK2);
+    if(setOK == 0){
+        //OK
+        m_timerCheckStatus->start();
+        m_labelCLK2Freq->setStyleSheet("QLabel { color: black; }");
+        m_labelSi5351Status->clear();
+    } else {
+        //Error set_freq
+        m_labelCLK2Freq->setStyleSheet("QLabel { color: red; }");
+    }
 }
 
 void MainWindow::updateSi5351Status()
 {
+    m_si5351->update_status();
     m_labelSi5351Status->setText(QString("SYS_INT: %1    LOL_A: %2    LOL_B: %3    LOS: %4    REVID: %5")
                                  .arg(m_si5351->dev_status.SYS_INIT)
                                  .arg(m_si5351->dev_status.LOL_A)
